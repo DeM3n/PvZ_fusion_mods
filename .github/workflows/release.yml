@@ -1,0 +1,53 @@
+name: Build and Release PvZ Fusion Mods
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Package Mods
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 6 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Build All Mods
+        run: dotnet build PvZ_fusion_mods.sln -c Release
+
+      - name: Stage Artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "release_assets" -Force
+          
+          # Copy all built mod DLLs
+          $dlls = Get-ChildItem -Path "src" -Recurse -Filter "*.dll" | Where-Object { $_.FullName -like "*bin\Release*" }
+          foreach ($dll in $dlls) {
+              Copy-Item $dll.FullName -Destination "release_assets\" -Force
+              Write-Host "Staged: $($dll.Name)"
+          }
+
+          # Create a bundle ZIP file
+          $tag = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "latest" }
+          $zipName = "PvZ_Fusion_Mods_All_${tag}.zip"
+          Compress-Archive -Path "release_assets\*.dll" -DestinationPath "release_assets\$zipName" -Force
+          Write-Host "Created bundle: $zipName"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release_assets/*.dll
+            release_assets/*.zip
+          generate_release_notes: true

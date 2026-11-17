@@ -1,6 +1,7 @@
 # Build artifacts
-bin/
-obj/
+**/bin/
+**/obj/
+release_assets/
 
 # Visual Studio / Rider / IDEs
 .vs/
