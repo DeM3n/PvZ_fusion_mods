@@ -90,7 +90,7 @@ namespace PvZMod
             if (targetHypno == null)
                 return;
 
-            var buckets = Object.FindObjectsOfType<Bucket>();
+            var buckets = UnityEngine.Object.FindObjectsOfType<Bucket>();
             if (buckets == null || buckets.Length == 0)
                 return;
 
